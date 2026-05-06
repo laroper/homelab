@@ -22,8 +22,5 @@
 - **Switch**: TP Link 5 port switch
 - **IP Addressing**: 
   -**VLANs - 255.255.255.0          Switch Port**
-    HOME_LAN - 192.168.11.1 /24-    PORT 3
-    WORK_LAN - 172.16.11.1 /24 -    PORT 2
-    WIFI_IOT - 192.168.12.1 /24 -   PORT 5
-    VM_LAN   - 192.168.13.1 /24 -   PORT 4
+   
 
