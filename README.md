@@ -17,7 +17,7 @@ My lab includes:
 - ISP modem/router with a 1 Gbps connection.
 - TP-Link Omada ER605 VPN router.
 - TP-Link Omada EAP650 access point.
-- TP-Link Omada SDN controller.
+- TP-Link Omada SDN cloub-based controller.
 
 ## Network Segmentation
 
