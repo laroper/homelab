@@ -40,6 +40,7 @@ My main virtualization platform is Proxmox, which I use to run containers and vi
 - Portainer for Docker management.
 - Stirling PDF for document editing.
 - Nginx Proxy Manager for reverse proxy handling.
+- --+ cloudflare account
 - RustDesk server components for remote access.
 - Tailscale container for connectivity.
 - Nextcloud for self-hosted file management.
