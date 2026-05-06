@@ -48,15 +48,15 @@ My main virtualization platform is Proxmox, which I use to run containers and vi
 
 ### Virtual Machines
 
-- Kasm host for disposable Linux workspaces.
+- Kasm Workspaces for spinning up disposable Linux workspaces.
 - Kali Purple for defensive cybersecurity testing.
 
 ## Cloud Test Instances
 
-I also use cloud instances for remote testing and validation.
+I also use AWS cloud instances for remote testing and validation.
 
 - Kali EC2 instance for cybersecurity tooling.
-- Ubuntu instance for service testing and experimentation.
+- Ubuntu EC2 instance for service testing and experimentation.
 
 ## Services I Plan to Add
 
@@ -65,12 +65,13 @@ I also use cloud instances for remote testing and validation.
 - Jellyfin for media management, if I add NAS storage.
 - An AI service or engine for future experimentation.
 
-## Goals
+## My Goals
 
 - Improve segmentation and security.
 - Document infrastructure clearly.
 - Test self-hosted tools in isolated environments.
 - Expand automation and monitoring over time.
+- have fun while i learn various technologies
 
 ## Notes
 
