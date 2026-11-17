@@ -17,7 +17,7 @@ My lab includes:
 - ISP modem/router with a 1 Gbps connection.
 - TP-Link Omada ER605 VPN router.
 - TP-Link Omada EAP650 access point.
-- TP-Link Omada SDN cloub-based controller.
+- TP-Link Omada SDN Controller (self-hosted in a Proxmox LXC container).
 
 ## Network Segmentation
 
@@ -46,6 +46,7 @@ My main virtualization platform is Proxmox, which I use to run containers and vi
 - Nextcloud for self-hosted file management.
 - AdGuard for local DNS filtering.
 - Tailscale exit node.
+- Omada SDN Controller (CT 104) for central management of the EAP650 and ES205G.
 
 ### Virtual Machines
 
@@ -73,6 +74,10 @@ I also use AWS cloud instances for remote testing and validation.
 - Test self-hosted tools in isolated environments.
 - Expand automation and monitoring over time.
 - have fun while i learn various technologies
+
+## Guides
+
+- [Installing the Omada SDN Controller in a Proxmox LXC Container (Ubuntu 20.04)](omada-sdn-install-guide-ubuntu-20-04.md) — full walkthrough, including every error hit along the way and the corrections to the video guide it was based on.
 
 ## Notes
 
