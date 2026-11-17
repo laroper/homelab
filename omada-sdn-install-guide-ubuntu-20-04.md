@@ -18,7 +18,7 @@ worked out so the install succeeds the first time.
 In Proxmox, **Create CT** and choose:
 
 - Template: Ubuntu 20.04 standard
-- Resources: 2 CPU cores, 4 GB RAM, 16 GB disk (the controller is light; this leaves headroom for MongoDB)
+- Resources: 1 CPU cores, 2 GB RAM, 8 GB disk (the controller is light; this leaves headroom for MongoDB)
 - Network: DHCP, or a static address on the VLAN the controller will live on
 - An unprivileged container is fine
 
