@@ -1,39 +1,40 @@
-# Installing the TP-Link Omada SDN Controller (v6.3.0.45) in a Proxmox LXC Container
+# Installing the TP-Link Omada SDN Controller (v6.3.0.45) in a Fresh Proxmox LXC Container (Ubuntu 20.04)
 
-Tested and working — November 17, 2026. Written up because the video guide I followed
-assumed Debian 12, and this container runs Ubuntu 20.04. Every error below actually
-happened during this install, with the exact fix that resolved it.
+A clean, start-to-finish install. Tested November 17, 2026 — every step below was
+verified during a real install on this exact setup, with the pitfalls already
+worked out so the install succeeds the first time.
 
 ## Environment
 
 | Item | Detail |
 |---|---|
 | Host | Proxmox VE 8.4.11, node `proxmox` |
-| Container | LXC CT 104, named `OmadaSDN` |
-| Container OS | **Ubuntu 20.04 LTS (Focal Fossa)** — not Debian 12 |
+| Container | LXC, Ubuntu 20.04 LTS (Focal Fossa) |
 | Controller | Omada Network Application v6.3.0.45 (`Omada_Network_Application_v6.3.0.45_linux_x64_20260903171910.deb`, ~307 MB) |
-| Controller dependencies | MongoDB 7.0 (server < 8.1.0) and Java 17 |
+| Controller needs | MongoDB 7.0 (server < 8.1.0) and Java 17 |
 
-## Step-by-step install
+## 1. Create the container
 
-### 1. Download the controller
+In Proxmox, **Create CT** and choose:
 
-Download the Linux x64 `.deb` (v6.3.0.45) from TP-Link's official Omada Software
-Controller download page and place it in the container (e.g. `/root`).
+- Template: Ubuntu 20.04 standard
+- Resources: 2 CPU cores, 4 GB RAM, 16 GB disk (the controller is light; this leaves headroom for MongoDB)
+- Network: DHCP, or a static address on the VLAN the controller will live on
+- An unprivileged container is fine
 
-### 2. Install prerequisites
+Start the container and open its console (or SSH in as root).
+
+## 2. Update the container and install prerequisites
 
 ```bash
-apt update && apt install -y gnupg curl gdebi
+apt update && apt upgrade -y
+apt install -y gnupg curl gdebi software-properties-common
 ```
 
-(`gdebi` resolves the `.deb`'s dependencies for you; install it if it is not present.)
+## 3. Install MongoDB 7.0
 
-### 3. Add MongoDB's official repository — Ubuntu 20.04 version
-
-MongoDB is **not** in Ubuntu's (or Debian's) own repositories anymore, so the Omada
-installer cannot satisfy its MongoDB dependency without this step. Use the repo that
-matches your actual OS — this is where the video guide goes wrong (see below).
+The controller needs MongoDB, but Ubuntu 20.04 no longer ships it — you must add
+MongoDB's own repository. Use the repo that matches the container's OS exactly.
 
 ```bash
 curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
@@ -41,35 +42,24 @@ echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gp
 apt update
 ```
 
-Two things to get right here:
+Two details that break this step if wrong:
 
-- **Distribution:** `focal` (Ubuntu 20.04). The Debian 12 (`bookworm`) repo line
-  pulls packages built against newer libraries and will not install on 20.04.
-- **Component:** `multiverse`, **not** `main`. MongoDB's Ubuntu repository uses the
-  `multiverse` component — verified against MongoDB's own `InRelease` file.
-  With `main`, apt fetches the list and then reports that the repository
-  "doesn't have the component 'main'" and "Unable to locate package mongodb-org-server".
+- **`focal`** is the Ubuntu 20.04 release name. Do not use the Debian `bookworm`
+  repo line — those packages need libc6 >= 2.34 and libssl3, which 20.04 does
+  not have. Confirm your OS first with `cat /etc/os-release`.
+- The component is **`multiverse`**, not `main`. With `main`, apt fetches the
+  list and then says the repository "doesn't have the component 'main'" and the
+  package cannot be found. (Verified against MongoDB's own `InRelease` file.)
 
-(If your container runs Debian 12 instead, use the `bookworm` repo line with the
-`main` component — but confirm your OS first with `cat /etc/os-release`.)
-
-### 4. Remove Ubuntu's old MongoDB 3.6 first
-
-Ubuntu 20.04 ships MongoDB 3.6, and this container already had it installed
-(`mongodb`, `mongodb-clients`, `mongodb-server`, `mongodb-server-core`).
-The 7.0 install will fail with a dpkg overwrite error unless the old one is fully gone:
-
-```bash
-apt remove -y mongodb-server-core
-```
-
-Check nothing old remains:
+If the container already has Ubuntu's old MongoDB 3.6 installed, remove it
+first — it owns `/usr/bin/mongod` and will block the 7.0 install:
 
 ```bash
 dpkg -l | grep -i mongo
+apt remove -y mongodb-server-core mongodb-server mongodb-clients mongodb
 ```
 
-### 5. Install MongoDB 7.0 and start it
+Then install and start MongoDB:
 
 ```bash
 apt install -y mongodb-org-server
@@ -77,61 +67,59 @@ systemctl enable --now mongod
 systemctl status mongod
 ```
 
-Installed version: **7.0.48**. Note that MongoDB does **not** start on its own after
-install — the service shows as loaded but `inactive (dead)` until you start it, and
-the Omada installer needs the database running. `enable --now` both starts it and
+Installed version: **7.0.48**. MongoDB does **not** start by itself after install —
+the service shows as loaded but `inactive (dead)` until you start it, and the
+Omada installer needs the database running. `enable --now` both starts it and
 makes it start on boot.
 
-### 6. Install Java 17 — and make it the default Java
+> CPU note: MongoDB 7.0 needs AVX support from the host CPU. If `mongod` fails
+> to start with an illegal-instruction error, the host CPU is too old for
+> MongoDB 7.
 
-Omada 6.3 requires Java 17:
+## 4. Install Java 17 and make it the default
 
-```bash
-apt install -y openjdk-17-jre-headless
-```
-
-On Ubuntu 20.04, Java 17 lives in the **`universe`** repository (`main` only has
-Java 11). If apt reports "Unable to locate package openjdk-17-jre-headless",
-enable universe first:
+Omada 6.3 requires Java 17. On Ubuntu 20.04 it lives in the `universe`
+repository (`main` only has Java 11), so enable universe first:
 
 ```bash
-apt install -y software-properties-common
 add-apt-repository -y universe
 apt update
 apt install -y openjdk-17-jre-headless
+java -version
 ```
 
-Installed version: **17.0.15+6~us1-0ubuntu1~20.04**.
-
-**This is the sneaky one:** installing the Java 17 package is not enough. This
-container also had Java 8 installed, and Java 8 was still the default `java`
-(`java -version` showed `1.8.0_452`). Omada's installer checks the Java *version*,
-so it kept failing even with the Java 17 package present. Switch the default:
+`java -version` must show **17**. If it shows 1.8.x, Java 8 is also installed
+and is still the default — the Omada installer checks the Java *version*, so it
+will fail even though the Java 17 package is present. Switch the default:
 
 ```bash
 update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
 java -version
 ```
 
-`java -version` must show **17** before you continue. (Do not remove Java 8 —
-just change the default.)
+Installed version: **17.0.15+6~us1-0ubuntu1~20.04**. Leave Java 8 installed; only
+the default changes.
 
-### 7. Install the Omada controller
+## 5. Download and install the Omada controller
+
+Download the Linux x64 `.deb` (v6.3.0.45) from TP-Link's official Omada Software
+Controller download page and place it in the container (e.g. `/root`), then:
 
 ```bash
 gdebi Omada_Network_Application_v6.3.0.45_linux_x64_20260903171910.deb
 ```
 
-Answer `y` when asked. The install should now complete without errors.
+Answer `y` when asked. With MongoDB running and Java 17 as the default, the
+install completes without errors.
 
-### 8. Verify and reach the controller
+## 6. Verify and open the controller
 
 ```bash
 systemctl status mongod
 systemctl status omadac
 ```
 
-Then open the web UI from your LAN:
+Both services should show `active (running)`. Then open the web UI from your LAN:
 
 ```
 https://<container-IP>:8043
@@ -139,18 +127,28 @@ https://<container-IP>:8043
 
 Find the container's IP with `hostname -I` inside the container, or in the
 Proxmox UI under the container's Network tab. Create your admin account on first
-login, then adopt your devices.
+login.
 
-## Errors encountered and their fixes
+## 7. Adopt your devices
 
-| # | Exact error | Cause | Fix |
-|---|---|---|---|
-| 1 | `Dependency is not satisfiable: mongodb-server (< 8.1.0)\|mongodb-org-server (< 8.1.0)\|mongodb-10gen (< 8.1.0)` | MongoDB is no longer in Ubuntu/Debian repos | Add MongoDB's official 7.0 repo (step 3) |
-| 2 | `mongodb-org-server : Depends: libc6 (>= 2.34) ... / Depends: libssl3 (>= 3.0.0) but it is not installable` | Used the Debian 12 (`bookworm`) repo line on an Ubuntu 20.04 container | Use the `focal` repo line instead |
-| 3 | `Skipping acquire of configured file 'main/binary-amd64/Packages' ... doesn't have the component 'main'` / `E: Unable to locate package mongodb-org-server` | MongoDB's Ubuntu repo uses the `multiverse` component, not `main` | End the repo line with `multiverse` |
-| 4 | `dpkg: error ... trying to overwrite '/usr/bin/mongod', which is also in package mongodb-server-core 1:3.6.9+really3.6.8+90~g8e540c0b6d-0ubuntu5.3` | Old Ubuntu MongoDB 3.6 still installed | `apt remove -y mongodb-server-core` before installing 7.0 |
-| 5 | `Error: openjdk-17-jre-headless required. Please install openjdk-17-jre-headless before installing this package.` (from the Omada pre-install script) | Java 8 was the default `java` even though the Java 17 package was installed | `update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java`, then confirm `java -version` shows 17 |
-| 6 | `E: The package omadac needs to be reinstalled, but I can't find an archive for it.` (on *every* apt command after a failed install) | A failed install leaves `omadac` half-registered in dpkg | `dpkg --remove --force-remove-reinstreq omadac`, then continue |
+- Adopt the access point and switch from the controller's Devices page. If the
+  controller sits on a different VLAN from the devices, adopt by IP (set the
+  inform URL on each device to the controller's address) — L2 discovery will not
+  cross VLANs.
+- The ER605 router can also be adopted, but adopting it migrates its VLAN and
+  access-control configuration to controller management — treat that as a
+  separate decision, not part of the install.
+
+## If something fails
+
+| Symptom | Fix |
+|---|---|
+| `Dependency is not satisfiable: mongodb-server (< 8.1.0)...` | MongoDB repo not added — do step 3 |
+| `Depends: libc6 (>= 2.34)` / `libssl3 ... not installable` | Wrong repo line (Debian bookworm on Ubuntu 20.04) — use the `focal` line in step 3 |
+| `doesn't have the component 'main'` / `Unable to locate package mongodb-org-server` | Repo component must be `multiverse`, not `main` |
+| `trying to overwrite '/usr/bin/mongod'` | Old MongoDB 3.6 still installed — remove it (step 3) |
+| `Error: openjdk-17-jre-headless required` during install | Default `java` is still 8 — switch it (step 4) and re-run gdebi |
+| `E: The package omadac needs to be reinstalled, but I can't find an archive for it` (every apt command fails) | A failed install left omadac half-registered — `dpkg --remove --force-remove-reinstreq omadac`, then continue |
 
 ## Corrections to the video guide
 
@@ -182,13 +180,4 @@ check your container's OS first (`cat /etc/os-release`). If it is Ubuntu 20.04:
 > /usr/lib/jvm/java-17-openjdk-amd64/bin/java` — the installer checks the Java
 > version, not just the package. (6) If an install fails halfway, clear it with
 > `dpkg --remove --force-remove-reinstreq omadac` or every apt command breaks.
-> Full write-up with every error and fix is on my GitHub lab.
-
-## What's next
-
-- Adopt the EAP650 access point and the ES205G switch into the controller.
-  The controller sits on a different VLAN from the devices, so adopt by IP
-  (inform URL), not L2 discovery.
-- The ER605 router can also be adopted, but adopting it migrates its VLAN and
-  access-control configuration to controller management — a separate decision,
-  not automatic.
+> Full clean-install walkthrough is on my GitHub lab.
