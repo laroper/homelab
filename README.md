@@ -18,11 +18,11 @@ My lab includes:
 
 ```mermaid
 flowchart TB
-    Internet["Internet<br/>AT&T Fiber · 1 Gbps"] --> ATT["AT&T Gateway<br/>192.168.1.254"]
-    ATT --> ER605["TP-Link ER605 VPN Router<br/>Standalone mode · UI 192.168.1.239<br/>WAN: Port 1"]
-    ER605 -->|"Port 3 · Trunk<br/>VLAN 1 untagged<br/>VLAN 5, 10, 15 tagged"| ES205G["TP-Link ES205G Managed Switch<br/>192.168.1.203 · Uplink: Port 5"]
+    Internet["Internet<br/>AT&T Fiber · 1 Gbps"] --> ATT["AT&T Gateway<br/>192.168.1.x"]
+    ATT --> ER605["TP-Link ER605 VPN Router<br/>Standalone mode · UI 192.168.1.x<br/>WAN: Port 1"]
+    ER605 -->|"Port 3 · Trunk<br/>VLAN 1 untagged<br/>VLAN 5, 10, 15 tagged"| ES205G["TP-Link ES205G Managed Switch<br/>192.168.1.x · Uplink: Port 5"]
     ER605 -->|"Ports 2, 4, 5<br/>VLAN 10 access (spare)"| Spare["Spare access ports"]
-    ES205G -->|"Port 1 · VLAN 15 untagged"| Proxmox["Proxmox VE 8.4.11<br/>192.168.13.50"]
+    ES205G -->|"Port 1 · VLAN 15 untagged"| Proxmox["Proxmox VE<br/>192.168.13.x"]
     ES205G -->|"Port 2 · VLAN 1 untagged<br/>VLAN 5, 10 tagged"| EAP650["TP-Link EAP650 Access Point<br/>via PoE injector"]
     ES205G -->|"Port 3 · VLAN 1 untagged"| Unman["Unmanaged Switch<br/>Local LAN"]
     ES205G -->|"Port 4 · VLAN 5 untagged"| WorkPC["Work PC"]
@@ -36,11 +36,11 @@ flowchart TB
     ER605 --> H1["Home devices"]
     ER605 --> W1["Work PC"]
     ER605 --> I1["IoT &amp; wireless devices"]
-    ER605 --> V1["Proxmox host · 192.168.13.50"]
+    ER605 --> V1["Proxmox host · 192.168.13.x"]
 
     subgraph Home["VLAN 1 — Home_LAN · 192.168.11.0/24"]
         H1["Home devices"]
-        H2["Canon PIXMA TR4720<br/>192.168.11.110"]
+        H2["Canon PIXMA TR4720<br/>192.168.11.x"]
         H3["Wi-Fi: The_Promise_LAN"]
     end
     subgraph Work["VLAN 5 — Work_LAN · 172.16.11.0/24"]
@@ -53,9 +53,9 @@ flowchart TB
         I3["Wi-Fi: The_Promise_Guest"]
     end
     subgraph VM["VLAN 15 — VM_LAN · 192.168.13.0/24"]
-        V1["Proxmox host · 192.168.13.50"]
-        V2["AdGuard Home · 192.168.13.103"]
-        V3["Portainer · 192.168.13.51:9443"]
+        V1["Proxmox host · 192.168.13.x"]
+        V2["AdGuard Home · 192.168.13.x"]
+        V3["Portainer · 192.168.13.x"]
         V4["Omada SDN Controller · LXC CT 104"]
         V5["RustDesk · Stirling PDF · pfSense (lab)"]
     end
@@ -65,15 +65,15 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph Tailnet["Tailscale Tailnet · taild1f7f.ts.net"]
-        Exit["law-exit-node · Exit Node<br/>100.93.110.47<br/>Advertises 192.168.13.0/24<br/>and 0.0.0.0/0"]
-        ProxmoxTS["proxmox · 100.68.249.66"]
-        OmadaTS["omadasdn · 100.125.10.58"]
-        AdGuardTS["adguard · 100.99.108.46"]
-        Laptop["omarchy (ThinkPad T470) · 100.77.136.100"]
-        Phone["iPhone 16 Plus · 100.124.185.127"]
-        iPad["iPad Pro · 100.111.26.53"]
-        Muse["muse (AI agent) · 100.81.59.76"]
+    subgraph Tailnet["Tailscale Tailnet"]
+        Exit["law-exit-node · Exit Node<br/>Advertises 192.168.13.0/24<br/>and 0.0.0.0/0"]
+        ProxmoxTS["proxmox"]
+        OmadaTS["omadasdn"]
+        AdGuardTS["adguard"]
+        Laptop["omarchy (ThinkPad T470)"]
+        Phone["iPhone 16 Plus"]
+        iPad["iPad Pro"]
+        Muse["muse (AI agent)"]
         AWS["AWS lab instances<br/>Kali + Ubuntu EC2"]
     end
     Exit -->|"Subnet route"| VM_LAN["VM_LAN · 192.168.13.0/24"]
@@ -83,21 +83,21 @@ flowchart TB
 
 | VLAN | Name | Subnet | Gateway | DHCP | Purpose |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Home_LAN | 192.168.11.0/24 | 192.168.11.1 | Enabled (.100–.199) | General home devices, printer, main Wi-Fi |
-| 5 | Work_LAN | 172.16.11.0/24 | 172.16.11.1 | Enabled | Work PC and work Wi-Fi, fully isolated from Home |
-| 10 | WIFI_IOT | 192.168.12.0/24 | 192.168.12.1 | Enabled | IoT and guest wireless devices |
-| 15 | VM_LAN | 192.168.13.0/24 | 192.168.13.1 | Enabled | Proxmox host, containers, and lab services |
+| 1 | Home_LAN | 192.168.11.0/24 | 192.168.11.x | Enabled (.100–.199) | General home devices, printer, main Wi-Fi |
+| 5 | Work_LAN | 172.16.11.0/24 | 172.16.11.x | Enabled | Work PC and work Wi-Fi, fully isolated from Home |
+| 10 | WIFI_IOT | 192.168.12.0/24 | 192.168.12.x | Enabled | IoT and guest wireless devices |
+| 15 | VM_LAN | 192.168.13.0/24 | 192.168.13.x | Enabled | Proxmox host, containers, and lab services |
 
 ## Network Hardware
 
 | Device | Role | Address | Connection |
 | --- | --- | --- | --- |
-| AT&T Gateway | ISP modem/router, internet uplink | 192.168.1.254 | WAN side of the ER605 |
-| TP-Link ER605 | VPN router, DHCP, firewall/ACLs | 192.168.1.239 (UI) | Standalone mode (not Omada-managed) |
-| TP-Link ES205G | 5-port managed switch, 802.1Q VLANs | 192.168.1.203 | Uplink to ER605 port 3 |
+| AT&T Gateway | ISP modem/router, internet uplink | 192.168.1.x | WAN side of the ER605 |
+| TP-Link ER605 | VPN router, DHCP, firewall/ACLs | 192.168.1.x (UI) | Standalone mode (not Omada-managed) |
+| TP-Link ES205G | 5-port managed switch, 802.1Q VLANs | 192.168.1.x | Uplink to ER605 port 3 |
 | TP-Link EAP650 | Wireless access point | via switch port 2 | PoE injector (switch has no PoE) |
-| Canon PIXMA TR4720 | Home printer (Wi-Fi, AirPrint) | 192.168.11.110 | Home_LAN (VLAN 1) |
-| Proxmox host | Virtualization server (laptop hardware) | 192.168.13.50 | Switch port 1, VLAN 15 |
+| Canon PIXMA TR4720 | Home printer (Wi-Fi, AirPrint) | 192.168.11.x | Home_LAN (VLAN 1) |
+| Proxmox host | Virtualization server (laptop hardware) | 192.168.13.x | Switch port 1, VLAN 15 |
 | Work PC | Work workstation | VLAN 5 | Switch port 4 |
 | Unmanaged switch | Local LAN expansion | VLAN 1 | Switch port 3 |
 
@@ -134,10 +134,10 @@ flowchart TB
 
 ## DNS — AdGuard Home
 
-AdGuard Home is the DNS server for the whole network: **192.168.13.103** (web UI on port 3000; port 80 on that box is an Apache default page, not AdGuard). The ER605 hands out 192.168.13.103 as the DNS server on Home, Work, and IoT DHCP. Upstream DNS: 1.1.1.1, 1.0.0.1, 9.9.9.9.
+AdGuard Home is the DNS server for the whole network (VM_LAN, web UI). The ER605 hands out the AdGuard address as the DNS server on Home, Work, and IoT DHCP. Upstream DNS: 1.1.1.1, 1.0.0.1, 9.9.9.9.
 
 - Proxmox host DNS: 1.1.1.1 / 8.8.8.8.
-- DNS rewrite for the reverse proxy: `portainer.home.lan` → 192.168.13.51.
+- DNS rewrite for the reverse proxy: `portainer.home.lan` → the Portainer host on VM_LAN.
 
 ## Access Control — ER605 Firewall Rules
 
@@ -165,25 +165,25 @@ What the structure does:
 - **Work_LAN is fully isolated from Home_LAN, both directions** (rules 3 and 5). The work PC reaches only the internet (plus DNS to AdGuard via rule 12).
 - **Home_LAN can reach VM_LAN and WIFI_IOT freely** (rules 1 and 2) — this is how home devices reach AdGuard, Portainer, and the printer.
 - **IoT and VM networks cannot initiate connections into Home, Work, or each other** (rules 6–10, 13, 14). Replies to connections started from Home_LAN still return (stateful), so Home→VM and Home→IoT access keeps working.
-- **DNS exceptions (rules 11 and 12):** IoT and Work devices use AdGuard (192.168.13.103) as their DNS. DNS (port 53) from WIFI_IOT and Work_LAN to VM_LAN is allowed so name resolution works; everything else from those networks to VM_LAN stays blocked. If a DNS Allow ever ends up below its matching Deny rule, DNS breaks on that network ("Connected, no internet" with a valid IP) — that exact fault is how this ordering was found.
+- **DNS exceptions (rules 11 and 12):** IoT and Work devices use AdGuard as their DNS. DNS (port 53) from WIFI_IOT and Work_LAN to VM_LAN is allowed so name resolution works; everything else from those networks to VM_LAN stays blocked. If a DNS Allow ever ends up below its matching Deny rule, DNS breaks on that network ("Connected, no internet" with a valid IP) — that exact fault is how this ordering was found.
 
 ## Virtualization Host
 
-My main virtualization platform is Proxmox VE 8.4.11, running on laptop hardware (node `proxmox`, 192.168.13.50, VM_LAN). Proxmox host DNS is 1.1.1.1 / 8.8.8.8.
+My main virtualization platform is Proxmox VE, running on laptop hardware (node `proxmox`, VM_LAN). Proxmox host DNS is 1.1.1.1 / 8.8.8.8.
 
 ## Containers and Services
 
 ### LXC Containers
 
 - pfSense - Firewall service (lab firewall, not the network gateway).
-- Portainer for Docker management (https://192.168.13.51:9443/).
+- Portainer for Docker management (HTTPS web UI).
 - Stirling PDF for document editing.
 - Nginx Proxy Manager for reverse proxy handling.
 - --+ cloudflare account
 - RustDesk server components for remote access.
 - Tailscale container for connectivity.
 - Nextcloud for self-hosted file management.
-- AdGuard for local DNS filtering (192.168.13.103, UI port 3000).
+- AdGuard for local DNS filtering (VM_LAN, web UI).
 - Tailscale exit node.
 - Omada SDN Controller (CT 104) for central management of the EAP650 and ES205G.
 
@@ -194,23 +194,23 @@ My main virtualization platform is Proxmox VE 8.4.11, running on laptop hardware
 
 ## Tailscale Tailnet (VPN)
 
-Tailnet: `taild1f7f.ts.net`. Every device below is reachable by name or 100.x address from anywhere, without opening ports on the router. The exit node `law-exit-node` advertises the VM_LAN subnet route (192.168.13.0/24) and full-tunnel exit (0.0.0.0/0).
+Every device below is reachable by name from anywhere, without opening ports on the router. The exit node `law-exit-node` advertises the VM_LAN subnet route (192.168.13.0/24) and full-tunnel exit (0.0.0.0/0).
 
-| Device | Role | Tailscale IP |
-| --- | --- | --- |
-| law-exit-node | Exit node, subnet router | 100.93.110.47 |
-| proxmox | Proxmox host | 100.68.249.66 |
-| omadasdn | Omada SDN Controller (CT 104) | 100.125.10.58 |
-| adguard | AdGuard Home | 100.99.108.46 |
-| portainer-ts | Portainer | 100.88.117.42 |
-| kali-prox | Kali VM on Proxmox | 100.79.168.4 |
-| omarchy | ThinkPad T470 laptop (Omarchy Linux) | 100.77.136.100 |
-| gestez-t470 | ThinkPad T470 (second machine) | 100.106.23.94 |
-| ilaw-16plus | iPhone 16 Plus | 100.124.185.127 |
-| ipad-pro-11-gen-3 | iPad Pro | 100.111.26.53 |
-| kasm-host | Kasm Workspaces host | 100.85.244.56 |
-| muse | AI agent device | 100.81.59.76 |
-| gesetz-v3 / gesetz-15-bw0xx | Lab devices (roles TBD) | 100.67.209.49 / 100.102.137.116 |
+| Device | Role |
+| --- | --- |
+| law-exit-node | Exit node, subnet router |
+| proxmox | Proxmox host |
+| omadasdn | Omada SDN Controller (CT 104) |
+| adguard | AdGuard Home |
+| portainer-ts | Portainer |
+| kali-prox | Kali VM on Proxmox |
+| omarchy | ThinkPad T470 laptop (Omarchy Linux) |
+| gestez-t470 | ThinkPad T470 (second machine) |
+| ilaw-16plus | iPhone 16 Plus |
+| ipad-pro-11-gen-3 | iPad Pro |
+| kasm-host | Kasm Workspaces host |
+| muse | AI agent device |
+| gesetz-v3 / gesetz-15-bw0xx | Lab devices (roles TBD) |
 
 Tailscale SSH is enabled on the tailnet, with access controlled by the tailnet ACL (allow-all traffic ACL; SSH rules gate which users can reach which nodes).
 
@@ -247,7 +247,7 @@ I also use AWS cloud instances for remote testing and validation.
 
 ## Notes
 
-Private (RFC1918) and Tailscale (CGNAT 100.x) addresses are shown intentionally — none of them are reachable from the public internet. No credentials, passwords, Wi-Fi keys, or public access endpoints are published in this repository.
+Host addresses are masked on purpose (shown as `192.168.x.x`) — the structure, subnets, and rules are the point, not the exact addresses. No credentials, passwords, Wi-Fi keys, or public access endpoints are published in this repository.
 
 ---
 
